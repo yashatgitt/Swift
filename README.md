@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="swift_p2p_logo.png" width="150" height="150" alt="Swift Logo">
+
 
 # 🚀 SWIFT — Secure Wireless Instant File Transfer
 
@@ -22,9 +22,7 @@
 
 Swift (**Secure Wireless Instant File Transfer**) is a high-performance, peer-to-peer file transfer application that leverages **WebRTC** to create a direct data pipeline between your devices. No more uploading to slow servers or worrying about cloud privacy.
 
-<div align="center">
-  <img src="swift_p2p_mockup.png" width="800" alt="Swift UI Mockup">
-</div>
+
 
 ## ✨ Features
 
