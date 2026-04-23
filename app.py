@@ -323,12 +323,9 @@ def ice_candidate():
 def get_qr_code():
     """Generate QR code for device pairing (no file transfer QR needed in P2P mode)"""
     try:
-        local_ip = get_local_ip()
-        device_id = session.get('device_id', 'unknown')
-        port = request.host.split(':')[1] if ':' in request.host else '5000'
-
-        # QR code points to server URL where others can discover this device
-        qr_data = f"http://{local_ip}:{port}?pair={device_id}"
+        # Use the current host URL (works for both local and hosted environments)
+        base_url = request.host_url.rstrip('/')
+        qr_data = f"{base_url}?pair={device_id}"
         logger.info(f"Generating pairing QR code for: {qr_data}")
 
         img = generate_qr_code(qr_data)
@@ -345,11 +342,10 @@ def get_qr_code():
 def get_qr_code_data():
     """Get QR code data as base64"""
     try:
-        local_ip = get_local_ip()
         device_id = session.get('device_id', 'unknown')
-        port = request.host.split(':')[1] if ':' in request.host else '5000'
-
-        qr_data = f"http://{local_ip}:{port}?pair={device_id}"
+        
+        base_url = request.host_url.rstrip('/')
+        qr_data = f"{base_url}?pair={device_id}"
 
         img = generate_qr_code(qr_data)
         img_io = BytesIO()
