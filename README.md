@@ -4,13 +4,13 @@
 
 **Secure Wireless Instant File Transfer**
 
-[![Version](https://img.shields.io/badge/version-1.1.0-6366f1?style=flat-square)](https://github.com/yashatgitt/Swift)
-[![Python](https://img.shields.io/badge/python-3.8+-3776AB?style=flat-square&logo=python&logoColor=white)](https://python.org)
-[![Flask](https://img.shields.io/badge/flask-2.x-000000?style=flat-square&logo=flask)](https://flask.palletsprojects.com)
-[![WebRTC](https://img.shields.io/badge/WebRTC-P2P-ff4d00?style=flat-square)](https://webrtc.org)
-[![Socket.IO](https://img.shields.io/badge/Socket.IO-4.x-010101?style=flat-square&logo=socket.io)](https://socket.io)
-[![License](https://img.shields.io/badge/license-MIT-00c896?style=flat-square)](LICENSE)
-[![Maintained](https://img.shields.io/badge/maintained-yes-00c896?style=flat-square)]()
+[![Version](https://img.shields.io/badge/version-1.1.0-6366f1?style=for-the-badge)](https://github.com/yashatgitt/Swift)
+[![Python](https://img.shields.io/badge/python-3.8+-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://python.org)
+[![Flask](https://img.shields.io/badge/flask-2.x-000000?style=for-the-badge&logo=flask)](https://flask.palletsprojects.com)
+[![WebRTC](https://img.shields.io/badge/WebRTC-P2P-ff4d00?style=for-the-badge)](https://webrtc.org)
+[![Socket.IO](https://img.shields.io/badge/Socket.IO-4.x-010101?style=for-the-badge&logo=socket.io)](https://socket.io)
+[![License](https://img.shields.io/badge/license-MIT-00c896?style=for-the-badge)](LICENSE)
+[![Maintained](https://img.shields.io/badge/maintained-yes-00c896?style=for-the-badge)]()
 
 <br/>
 
