@@ -19,7 +19,7 @@
 
 <br/>
 
-[**Live Demo**](https://swift.onrender.com) · [**Report Bug**](https://github.com/yashatgitt/Swift/issues) · [**Request Feature**](https://github.com/yashatgitt/Swift/issues)
+[**Live Demo**](https://swift.yashgg.me/) · [**Report Bug**](https://github.com/yashatgitt/Swift/issues) · [**Request Feature**](https://github.com/yashatgitt/Swift/issues)
 
 </div>
 
