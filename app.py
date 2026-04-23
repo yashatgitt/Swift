@@ -324,6 +324,7 @@ def get_qr_code():
     """Generate QR code for device pairing (no file transfer QR needed in P2P mode)"""
     try:
         # Use the current host URL (works for both local and hosted environments)
+        device_id = session.get('device_id', 'unknown')
         base_url = request.host_url.rstrip('/')
         qr_data = f"{base_url}?pair={device_id}"
         logger.info(f"Generating pairing QR code for: {qr_data}")
