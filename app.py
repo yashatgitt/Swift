@@ -426,4 +426,5 @@ if __name__ == '__main__':
     print(f"  Access at: http://{local_ip}:5000")
     print(f"  (Signaling Server for P2P communication)")
     print(f"{'='*50}\n")
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    port = int(os.environ.get('PORT', 5000))
+    app.run(host='0.0.0.0', port=port, debug=False)
