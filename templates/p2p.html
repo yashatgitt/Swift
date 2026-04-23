@@ -843,12 +843,13 @@
             
             pc.onconnectionstatechange = () => {
                 updateUI();
+                log(`Connection state: ${pc.connectionState}`);
                 if (pc.connectionState === 'connected') {
                     showMessage('Link Established', 'success');
                     switchTab('transfer');
                     state.isHandshaking = false;
                 }
-                if (pc.connectionState === 'disconnected' || pc.connectionState === 'closed') {
+                if (pc.connectionState === 'failed' || pc.connectionState === 'disconnected' || pc.connectionState === 'closed') {
                     disconnect();
                 }
             };
@@ -908,7 +909,7 @@
                         }
                     }
                 } catch (e) {}
-            }, 3000);
+            }, 1500); // Poll more frequently for snappier connections
         }
 
         function setupDataChannel(dc) {

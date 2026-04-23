@@ -182,13 +182,28 @@ def webrtc_signal():
 
             # Store the signal
             if signal_type == 'offer':
-                signaling_data[connection_id_ab]['offer'] = sdp
-                signaling_data[connection_id_ba]['offer'] = sdp
-                logger.info(f"Stored offer for {connection_id_ab}")
+                # Reset old connection data when a new offer starts
+                signaling_data[connection_id_ab].update({
+                    'offer': sdp,
+                    'answer': None,
+                    'candidates_a': [],
+                    'candidates_b': [],
+                    'timestamp': time.time()
+                })
+                signaling_data[connection_id_ba].update({
+                    'offer': sdp,
+                    'answer': None,
+                    'candidates_a': [],
+                    'candidates_b': [],
+                    'timestamp': time.time()
+                })
+                logger.info(f"New connection initiated: {connection_id_ab}")
             elif signal_type == 'answer':
                 signaling_data[connection_id_ab]['answer'] = sdp
                 signaling_data[connection_id_ba]['answer'] = sdp
-                logger.info(f"Stored answer for {connection_id_ab}")
+                signaling_data[connection_id_ab]['timestamp'] = time.time()
+                signaling_data[connection_id_ba]['timestamp'] = time.time()
+                logger.info(f"Answer stored for {connection_id_ab}")
 
         return jsonify({'status': 'signaled', 'connection_id': connection_id_ab})
 
@@ -274,10 +289,17 @@ def get_incoming_signals():
                         'from_device': data.get('from_device'),
                         'offer': data.get('offer'),
                         'answer': data.get('answer'),
-                        'candidates': data.get('candidates_a', [])
+                        'candidates': data.get('candidates_a', []) if data.get('from_device') != device_id else data.get('candidates_b', [])
                     }
+                    
                     if signal['offer'] or signal['answer'] or signal['candidates']:
                         incoming.append(signal)
+                        # Clear signaling data after it's been consumed
+                        data['offer'] = None
+                        data['answer'] = None
+                        data['candidates_a'] = []
+                        data['candidates_b'] = []
+                        
         return jsonify({'signals': incoming})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
