@@ -1836,7 +1836,7 @@
 
         function initSocket() {
             if (state.socket) return;
-            state.socket = io({ transports: ['websocket', 'polling'] });
+            state.socket = io();
 
             state.socket.on('peer_joined', (data) => {
                 log(`[Socket] Peer ${data.peerId} joined. Initiating...`);
