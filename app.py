@@ -422,8 +422,8 @@ def health():
 if __name__ == '__main__':
     local_ip = get_local_ip()
     print(f"\n{'='*50}")
-    print(f"  P2P File Share Server")
+    print(f"  SWIFT — Secure Wireless Instant File Transfer")
     print(f"  Access at: http://{local_ip}:5000")
-    print(f"  (Server for signaling only - files transfer P2P)")
+    print(f"  (Signaling Server for P2P communication)")
     print(f"{'='*50}\n")
     app.run(host='0.0.0.0', port=5000, debug=True)

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SWIFT // P2P</title>
+    <title>SWIFT — Secure Wireless Instant File Transfer</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=JetBrains+Mono:wght@500;700&family=Space+Grotesk:wght@700&display=swap" rel="stylesheet">
@@ -98,6 +98,21 @@
             font-weight: 700;
             letter-spacing: 0.1rem;
             text-transform: uppercase;
+        }
+
+        .wordmark-container {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .tagline {
+            font-family: var(--font-mono);
+            font-size: 0.6rem;
+            opacity: 0.4;
+            letter-spacing: 2px;
+            margin-left: 38px;
+            margin-top: -4px;
+            white-space: nowrap;
         }
 
         .logo-dot {
@@ -432,8 +447,11 @@
 
     <div class="app-container">
         <header class="header">
-            <div class="wordmark">
-                <div class="logo-dot"></div> SWIFT
+            <div class="wordmark-container">
+                <div class="wordmark">
+                    <div class="logo-dot"></div> SWIFT
+                </div>
+                <div class="tagline">SECURE WIRELESS INSTANT FILE TRANSFER</div>
             </div>
             <div class="header-controls">
                 <button class="theme-toggle" onclick="toggleTheme()" id="themeToggleBtn">☼</button>
@@ -529,7 +547,7 @@
         <div class="footer-item">PEERS: <b id="peerCount">0</b></div>
         <div class="footer-item">SESSION_TX: <b id="totalTransferred">0.00 MB</b></div>
         <div class="marquee-wrapper">
-            <div id="statusMarquee">CORE_INITIALIZED ... READY_FOR_HANDSHAKE ... WAITING_FOR_INPUT ...</div>
+            <div id="statusMarquee">SWIFT: SECURE WIRELESS INSTANT FILE TRANSFER ... CORE_INITIALIZED ... READY_FOR_HANDSHAKE ...</div>
         </div>
     </footer>
 
