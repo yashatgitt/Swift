@@ -1416,7 +1416,7 @@
                     <p
                         style="font-family: var(--font-display); font-size: 0.8rem; text-transform: uppercase; margin-bottom: 12px; text-align: center;">
                         Enter remote sequence</p>
-                    <input type="text" id="joinCode" placeholder="000000" maxlength="6">
+                    <input type="text" id="joinCode" placeholder="000000" maxlength="6" inputmode="numeric" pattern="[0-9]*" oninput="this.value = this.value.replace(/[^0-9]/g, '')">
                     <div style="display: flex; gap: 12px;">
                         <button onclick="joinByCode(this)" class="btn-pair" style="flex: 2;">Connect Node</button>
                         <button onclick="copyShareLink(this)" class="btn-pair"
