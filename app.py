@@ -3,21 +3,36 @@ import socket
 import qrcode
 import base64
 import random
-from io import BytesIO
-from flask import Flask, render_template, request, send_file, jsonify, session
-from datetime import datetime
 import uuid
 import logging
 import time
+from io import BytesIO
+from datetime import datetime
 from threading import Lock
+from flask import Flask, render_template, request, send_file, jsonify, session
+from flask_socketio import SocketIO, emit, join_room, leave_room
 
 app = Flask(__name__)
 # Generate a secure random key if not provided
 app.secret_key = os.environ.get('SECRET_KEY', 'default-secret-key-change-in-production')
+socketio = SocketIO(app, cors_allowed_origins="*")
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+# Silence standard Flask/Werkzeug request logs
+log = logging.getLogger('werkzeug')
+log.setLevel(logging.ERROR)
+logging.getLogger('geventwebsocket.handler').setLevel(logging.ERROR)
+logging.getLogger('gevent').setLevel(logging.ERROR)
+
+# Silence Socket.IO logs
+logging.getLogger('socketio').setLevel(logging.ERROR)
+logging.getLogger('engineio').setLevel(logging.ERROR)
+
+# In-memory store for Cloud Mode: { code: { sender_sid, receiver_sid, created_at } }
+rooms = {}
 
 # Suppress verbose werkzeug logging for frequent endpoints
 log = logging.getLogger('werkzeug')
@@ -142,203 +157,58 @@ def get_peers():
         logger.error(f"Error getting peers: {e}")
         return jsonify({'error': str(e)}), 500
 
+# Simplified Signaling System
+# incoming_signals[to_device_id] = [ {from, type, sdp, candidate}, ... ]
+incoming_signals = {}
+
 @app.route('/api/signal', methods=['POST'])
-def webrtc_signal():
-    """WebRTC signaling - exchange SDP offers and answers"""
+def send_signal():
+    """Unified signaling endpoint for offers, answers, and candidates"""
     try:
         data = request.json
         from_device = session.get('device_id')
-        to_device = data.get('to_device')
-        signal_type = data.get('type')  # 'offer' or 'answer'
-        sdp = data.get('sdp')
+        to_device = data.get('to')
+        
+        if not from_device or not to_device:
+            return jsonify({'error': 'Missing device ID'}), 400
 
-        # Store both directions for easier lookup
-        connection_id_ab = f"{from_device}-{to_device}"
-        connection_id_ba = f"{to_device}-{from_device}"
-
-        logger.info(f"WebRTC signaling: {signal_type} from {from_device} to {to_device}")
-
-        with signaling_lock:
-            # Initialize both directions if needed
-            if connection_id_ab not in signaling_data:
-                signaling_data[connection_id_ab] = {
-                    'offer': None,
-                    'answer': None,
-                    'candidates_a': [],
-                    'candidates_b': [],
-                    'from_device': from_device,
-                    'to_device': to_device
-                }
-
-            if connection_id_ba not in signaling_data:
-                signaling_data[connection_id_ba] = {
-                    'offer': None,
-                    'answer': None,
-                    'candidates_a': [],
-                    'candidates_b': [],
-                    'from_device': to_device,
-                    'to_device': from_device
-                }
-
-            # Store the signal
-            if signal_type == 'offer':
-                # Reset old connection data when a new offer starts
-                signaling_data[connection_id_ab].update({
-                    'offer': sdp,
-                    'answer': None,
-                    'candidates_a': [],
-                    'candidates_b': [],
-                    'timestamp': time.time()
-                })
-                signaling_data[connection_id_ba].update({
-                    'offer': sdp,
-                    'answer': None,
-                    'candidates_a': [],
-                    'candidates_b': [],
-                    'timestamp': time.time()
-                })
-                logger.info(f"New connection initiated: {connection_id_ab}")
-            elif signal_type == 'answer':
-                signaling_data[connection_id_ab]['answer'] = sdp
-                signaling_data[connection_id_ba]['answer'] = sdp
-                signaling_data[connection_id_ab]['timestamp'] = time.time()
-                signaling_data[connection_id_ba]['timestamp'] = time.time()
-                logger.info(f"Answer stored for {connection_id_ab}")
-
-        return jsonify({'status': 'signaled', 'connection_id': connection_id_ab})
-
-    except Exception as e:
-        logger.error(f"Error in WebRTC signaling: {e}")
-        return jsonify({'error': str(e)}), 500
-
-@app.route('/api/get-offer/<to_device>', methods=['GET'])
-def get_offer(to_device):
-    """Get incoming offer from another device"""
-    try:
-        device_id = session.get('device_id')
-        connection_id = f"{to_device}-{device_id}"
-
-        logger.debug(f"Device {device_id} checking for offer from {to_device}")
+        signal = {
+            'from': from_device,
+            'type': data.get('type'),
+            'sdp': data.get('sdp'),
+            'candidate': data.get('candidate'),
+            'timestamp': time.time()
+        }
 
         with signaling_lock:
-            if connection_id not in signaling_data:
-                return jsonify({'status': 'no_offer'})
-
-            signal_info = signaling_data[connection_id]
-
-            if signal_info.get('offer'):
-                return jsonify({
-                    'type': 'offer',
-                    'sdp': signal_info['offer'],
-                    'from_device': to_device,
-                    'candidates': signal_info.get('candidates_a', [])
-                })
-
-        return jsonify({'status': 'no_offer'})
-
-    except Exception as e:
-        logger.error(f"Error getting offer: {e}")
-        return jsonify({'error': str(e)}), 500
-
-@app.route('/api/get-signal/<connection_id>', methods=['GET'])
-def get_signal(connection_id):
-    """Get stored signaling data (offer or answer) for a connection"""
-    try:
-        with signaling_lock:
-            if connection_id not in signaling_data:
-                return jsonify({'status': 'no_signal'}), 200
-
-            signal_info = signaling_data[connection_id]
-            response = {
-                'connection_id': connection_id,
-                'from_device': signal_info.get('from_device'),
-                'to_device': signal_info.get('to_device')
-            }
-
-            if signal_info.get('offer'):
-                response['type'] = 'offer'
-                response['sdp'] = signal_info['offer']
-                response['candidates'] = signal_info.get('candidates_a', [])
-
-            if signal_info.get('answer'):
-                response['type'] = 'answer'
-                response['sdp'] = signal_info['answer']
-                response['candidates'] = signal_info.get('candidates_b', [])
-
-            if not signal_info.get('offer') and not signal_info.get('answer'):
-                return jsonify({'status': 'waiting'}), 200
-
-            return jsonify(response)
-    except Exception as e:
-        logger.error(f"Error getting signal: {e}")
-        return jsonify({'error': str(e)}), 500
-
-@app.route('/api/incoming-signals', methods=['GET'])
-def get_incoming_signals():
-    """Get all incoming signals (offers, answers, candidates) for the current device"""
-    try:
-        device_id = session.get('device_id')
-        if not device_id: return jsonify({'signals': []})
+            if to_device not in incoming_signals:
+                incoming_signals[to_device] = []
             
-        incoming = []
-        with signaling_lock:
-            for cid, data in signaling_data.items():
-                if data.get('to_device') == device_id:
-                    # Signals where this device is the target
-                    signal = {
-                        'from_device': data.get('from_device'),
-                        'offer': data.get('offer'),
-                        'answer': data.get('answer'),
-                        'candidates': data.get('candidates_a', []) if data.get('from_device') != device_id else data.get('candidates_b', [])
-                    }
-                    
-                    if signal['offer'] or signal['answer'] or signal['candidates']:
-                        incoming.append(signal)
-                        # Clear signaling data after it's been consumed
-                        data['offer'] = None
-                        data['answer'] = None
-                        data['candidates_a'] = []
-                        data['candidates_b'] = []
-                        
-        return jsonify({'signals': incoming})
+            # Limit mailbox size to prevent memory issues
+            if len(incoming_signals[to_device]) > 100:
+                incoming_signals[to_device].pop(0)
+                
+            incoming_signals[to_device].append(signal)
+
+        return jsonify({'status': 'sent'})
     except Exception as e:
+        logger.error(f"Signal error: {e}")
         return jsonify({'error': str(e)}), 500
 
-@app.route('/api/ice-candidate', methods=['POST'])
-def ice_candidate():
-    """Relay ICE candidates for NAT traversal"""
+@app.route('/api/get-signals', methods=['GET'])
+def get_signals():
+    """Retrieve and clear all incoming signals for the current device"""
     try:
-        data = request.json
-        from_device = session.get('device_id')
-        to_device = data.get('to_device')
-        candidate = data.get('candidate')
-
-        connection_id_ab = f"{from_device}-{to_device}"
-        connection_id_ba = f"{to_device}-{from_device}"
+        device_id = session.get('device_id')
+        if not device_id:
+            return jsonify({'signals': []})
 
         with signaling_lock:
-            for cid in [connection_id_ab, connection_id_ba]:
-                if cid not in signaling_data:
-                    signaling_data[cid] = {
-                        'offer': None,
-                        'answer': None,
-                        'candidates_a': [],
-                        'candidates_b': [],
-                        'from_device': from_device,
-                        'to_device': to_device
-                    }
+            signals = incoming_signals.pop(device_id, [])
 
-                # Ensure candidates are added to the correct list based on the sender
-                if from_device == signaling_data[cid].get('from_device'):
-                    signaling_data[cid]['candidates_a'].append(candidate)
-                else:
-                    signaling_data[cid]['candidates_b'].append(candidate)
-
-        logger.debug(f"ICE candidate relayed: {from_device} -> {to_device}")
-        return jsonify({'status': 'relayed'})
-
+        return jsonify({'signals': signals})
     except Exception as e:
-        logger.error(f"Error relaying ICE candidate: {e}")
+        logger.error(f"Get signals error: {e}")
         return jsonify({'error': str(e)}), 500
 
 @app.route('/api/qr-code')
@@ -348,6 +218,11 @@ def get_qr_code():
         # Use the current host URL (works for both local and hosted environments)
         device_id = session.get('device_id', 'unknown')
         base_url = request.host_url.rstrip('/')
+        
+        # Force HTTPS for public URLs (Render/etc) for WebRTC security
+        if 'localhost' not in base_url and '127.0.0.1' not in base_url:
+            base_url = base_url.replace('http://', 'https://')
+            
         qr_data = f"{base_url}?pair={device_id}"
         logger.info(f"Generating pairing QR code for: {qr_data}")
 
@@ -359,47 +234,6 @@ def get_qr_code():
         return send_file(img_io, mimetype='image/png')
     except Exception as e:
         logger.error(f"QR code generation error: {e}")
-        return jsonify({'error': str(e)}), 500
-
-@app.route('/api/qr-code-data')
-def get_qr_code_data():
-    """Get QR code data as base64"""
-    try:
-        device_id = session.get('device_id', 'unknown')
-        
-        base_url = request.host_url.rstrip('/')
-        qr_data = f"{base_url}?pair={device_id}"
-
-        img = generate_qr_code(qr_data)
-        img_io = BytesIO()
-        img.save(img_io, 'PNG')
-        img_io.seek(0)
-
-        img_base64 = base64.b64encode(img_io.getvalue()).decode()
-
-        return jsonify({
-            'url': qr_data,
-            'image': f'data:image/png;base64,{img_base64}',
-            'device_id': device_id,
-            'ip': local_ip,
-            'port': port
-        })
-    except Exception as e:
-        logger.error(f"QR code data error: {e}")
-        return jsonify({'error': str(e)}), 500
-
-@app.route('/api/pair', methods=['POST'])
-def pair_device():
-    """Mark device as paired"""
-    try:
-        data = request.json or {}
-        device_id = session.get('device_id', 'unknown')
-
-        logger.info(f"Device paired: {device_id}")
-        return jsonify({'status': 'paired', 'device_id': device_id})
-
-    except Exception as e:
-        logger.error(f"Error pairing: {e}")
         return jsonify({'error': str(e)}), 500
 
 @app.route('/api/get-peer-by-code/<code>', methods=['GET'])
@@ -438,6 +272,74 @@ def health():
         'timestamp': datetime.now().isoformat()
     })
 
+# Socket.IO Events for CLOUD MODE
+@socketio.on('join')
+def on_join(data):
+    room = data.get('code')
+    device_id = data.get('deviceId')
+    role = data.get('role', 'receiver') # Default to receiver
+    
+    if room:
+        join_room(room)
+        if room not in rooms:
+            rooms[room] = {'sender_sid': None, 'receiver_sid': None, 'created_at': time.time()}
+        
+        if role == 'sender':
+            rooms[room]['sender_sid'] = request.sid
+        else:
+            rooms[room]['receiver_sid'] = request.sid
+            if rooms[room]['sender_sid']:
+                emit('peer_joined', {'room': room, 'peerId': device_id, 'role': 'receiver'}, to=rooms[room]['sender_sid'])
+        
+        logger.info(f"Socket: {role.upper()} {device_id} joined room {room}")
+        emit('joined', {'role': role}, room=request.sid)
+
+@socketio.on('offer')
+def on_offer(data):
+    room = data.get('code')
+    if room:
+        logger.info(f"Socket: [OFFER] From {data.get('from')} in room {room}")
+        emit('offer', data, to=room, include_self=False)
+
+@socketio.on('answer')
+def on_answer(data):
+    room = data.get('code')
+    if room:
+        logger.info(f"Socket: [ANSWER] From {data.get('from')} in room {room}")
+        emit('answer', data, to=room, include_self=False)
+
+@socketio.on('ice')
+def on_ice(data):
+    room = data.get('code')
+    if room:
+        emit('ice', data, to=room, include_self=False)
+
+# ─── RELAY FALLBACK EVENTS ───
+
+@socketio.on('relay-chunk-start')
+def on_relay_start(data):
+    room = data.get('code')
+    if room in rooms and rooms[room]['receiver_sid']:
+        emit('relay-chunk-start', data, to=rooms[room]['receiver_sid'])
+
+@socketio.on('relay-chunk')
+def on_relay_chunk(data):
+    room = data.get('code')
+    if room in rooms and rooms[room]['receiver_sid']:
+        emit('relay-chunk', data, to=rooms[room]['receiver_sid'])
+
+@socketio.on('relay-chunk-end')
+def on_relay_end(data):
+    room = data.get('code')
+    if room in rooms and rooms[room]['receiver_sid']:
+        emit('relay-chunk-end', data, to=rooms[room]['receiver_sid'])
+
+@socketio.on('relay-ack')
+def on_relay_ack(data):
+    room = data.get('code')
+    if room in rooms and rooms[room]['sender_sid']:
+        emit('relay-ack', data, to=rooms[room]['sender_sid'])
+
 if __name__ == '__main__':
     local_ip = get_local_ip()
     print(f"\n{'='*50}")
@@ -446,4 +348,4 @@ if __name__ == '__main__':
     print(f"  (Signaling Server for P2P communication)")
     print(f"{'='*50}\n")
     port = int(os.environ.get('PORT', 5000))
-    app.run(host='0.0.0.0', port=port, debug=False)
+    socketio.run(app, host='0.0.0.0', port=port, debug=False)
