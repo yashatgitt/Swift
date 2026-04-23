@@ -40,14 +40,15 @@ When a direct connection isn't possible (different networks, strict NAT), SWIFT 
 ## Features
 
 - **Zero storage** — files stream directly between browsers, nothing is written to disk
-- **Local + Cloud modes** — LAN mode for same-network transfers, Cloud mode for cross-network via TURN/relay
+- **Local + Cloud modes** — "Same WiFi" mode for same-network transfers, "Anywhere" mode for cross-network via relay
 - **LAN turbo** — detects same-network connections and boosts chunk size to 256KB automatically
 - **Batch transfers** — select multiple files, preview them before sending, remove individual files from queue
-- **Live telemetry** — real-time speed in MB/s, ETA countdown, per-file progress
+- **Live telemetry** — real-time speed in MB/s, ETA countdown, per-file progress (Works on both WebRTC and Relay modes)
+- **Bidirectional Canceling** — cancel a transfer and the other peer drops the connection instantly
 - **6-digit pairing** — connect by code or QR scan, no accounts
 - **Custom device names** — name your devices, stored in localStorage
 - **Transfer history** — session log of sent and received files
-- **Dark/light theme** — persists across sessions
+- **Dark/light theme** — persists across sessions, seamlessly switches UI elements
 
 ---
 
@@ -160,19 +161,19 @@ Open `http://localhost:5000` in two browser tabs or on two devices on the same n
 
 ## Usage
 
-### LOCAL Mode (Same Network)
+### Same WiFi Mode (Local Network)
 
-1. Open Swift on both devices connected to the same WiFi
-2. Go to **Discover** tab — your device appears automatically
-3. Click **Connect** on the other device's card
-4. Drop files and send
+1. Open Swift on both devices connected to the same WiFi.
+2. Go to the **Discover** tab — your device appears automatically.
+3. Click **Connect** on the other device's card.
+4. Drop files and send.
 
-### CLOUD Mode (Different Networks)
+### Anywhere Mode (Different Networks)
 
-1. Switch to **Cloud** mode using the toggle in the header
-2. Share your 6-digit pairing code or QR with the other person
-3. They enter the code on their end
-4. Drop files and send
+1. Switch to **Anywhere** mode using the toggle in the header.
+2. Share your 6-digit pairing code or QR with the other person in the **Connect** tab.
+3. They enter the code on their end.
+4. Drop files and send.
 
 ---
 
@@ -186,7 +187,7 @@ Open `http://localhost:5000` in two browser tabs or on two devices on the same n
 | P2P | WebRTC DataChannel |
 | NAT Traversal | STUN (Google Public) |
 | QR | qrcode (Python) |
-| Fonts | Space Grotesk, JetBrains Mono, DM Sans |
+| Fonts | Plus Jakarta Sans, Inter, JetBrains Mono |
 
 ---
 

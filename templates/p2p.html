@@ -4,11 +4,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SWIFT — Secure Wireless Instant File Transfer</title>
+    <title>SWIFT - P2P File Sharing</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;700&family=JetBrains+Mono&display=swap"
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&family=Plus+Jakarta+Sans:wght@400;700;800&family=JetBrains+Mono&display=swap"
         rel="stylesheet">
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='favicon.png') }}">
     <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
     <style>
         :root {
@@ -27,9 +29,9 @@
             --green: #00c896;
             --yellow: #ffd000;
 
-            --font-display: 'Space Grotesk', sans-serif;
+            --font-display: 'Plus Jakarta Sans', sans-serif;
             --font-mono: 'JetBrains Mono', monospace;
-            --font-body: 'DM Sans', sans-serif;
+            --font-body: 'Inter', sans-serif;
         }
 
         body.light-theme {
@@ -136,6 +138,32 @@
             }
         }
 
+        .btn-loading {
+            background: var(--purple) !important;
+            color: #fff !important;
+            pointer-events: none;
+            position: relative;
+            overflow: hidden;
+            border-color: var(--purple) !important;
+        }
+
+        .btn-loading::after {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 50%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+            animation: loadingSwipe 1s infinite linear;
+        }
+
+        @keyframes loadingSwipe {
+            to {
+                left: 200%;
+            }
+        }
+
         @keyframes scan-pulse {
 
             0%,
@@ -226,16 +254,15 @@
             opacity: 0.4;
             letter-spacing: 2px;
             margin-left: 38px;
-            margin-top: -4px;
+            margin-top: 2px;
             white-space: nowrap;
         }
 
-        .logo-dot {
-            width: 24px;
-            height: 24px;
-            background: var(--orange);
-            border: var(--border);
-            border-radius: 50% !important;
+        .logo-image {
+            width: 28px;
+            height: 28px;
+            object-fit: contain;
+            border-radius: 4px;
         }
 
         .header-controls {
@@ -246,6 +273,7 @@
 
         .theme-toggle {
             background: var(--surface);
+            color: var(--text);
             border: var(--border);
             box-shadow: 2px 2px 0px var(--border-color);
             padding: 8px;
@@ -575,6 +603,51 @@
             background: var(--border-color);
             margin-bottom: 12px;
             position: relative;
+        }
+
+        /* Quick Guide Modal */
+        .quick-guide-list {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            font-family: var(--font-body);
+            font-size: 0.95rem;
+            color: var(--text);
+            opacity: 0.9;
+        }
+
+        .quick-guide-list li {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .light-theme .quick-guide-list li {
+            border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+        }
+
+        .quick-guide-list li:last-child {
+            border-bottom: none;
+            padding-bottom: 0;
+        }
+
+        .quick-guide-list li span {
+            background: var(--purple);
+            color: #fff;
+            font-family: var(--font-mono);
+            font-weight: 700;
+            padding: 2px 10px;
+            font-size: 0.9rem;
+            border-radius: 4px;
+            flex-shrink: 0;
+        }
+
+        .quick-guide-list strong {
+            color: var(--orange);
+            font-family: var(--font-display);
         }
 
         .progress-fill {
@@ -1070,6 +1143,89 @@
                 text-align: center;
             }
         }
+
+        /* Name Prompt Modal */
+        .modal-overlay {
+            position: fixed !important;
+            top: 0 !important;
+            left: 0 !important;
+            right: 0 !important;
+            bottom: 0 !important;
+            width: 100vw !important;
+            height: 100vh !important;
+            background: rgba(5, 5, 5, 0.95) !important;
+            backdrop-filter: blur(12px) !important;
+            z-index: 999999999 !important;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            animation: fadeIn 0.4s ease-out;
+        }
+
+        .modal-content {
+            background: var(--surface);
+            border: 3px solid var(--orange);
+            box-shadow: 8px 8px 0px var(--orange);
+            padding: 30px;
+            width: 90%;
+            max-width: 380px;
+            text-align: center;
+            animation: dropIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .modal-content h2 {
+            font-family: var(--font-display);
+            font-size: 1.4rem;
+            margin-bottom: 15px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: var(--orange);
+        }
+
+        .modal-content p {
+            font-family: var(--font-mono);
+            font-size: 0.75rem;
+            opacity: 0.7;
+            margin-bottom: 20px;
+            letter-spacing: 1px;
+        }
+
+        .modal-input {
+            width: 100%;
+            background: #000;
+            border: 2px solid var(--text);
+            padding: 12px;
+            color: var(--text);
+            font-family: var(--font-mono);
+            font-size: 1.1rem;
+            text-align: center;
+            margin-bottom: 20px;
+            outline: none;
+        }
+
+        .modal-input:focus {
+            border-color: var(--orange);
+            box-shadow: 0 0 15px rgba(255, 77, 0, 0.3);
+        }
+
+        .modal-btn {
+            background: var(--orange);
+            color: #000;
+            border: none;
+            padding: 12px 20px;
+            font-family: var(--font-display);
+            font-weight: 900;
+            font-size: 0.9rem;
+            cursor: pointer;
+            text-transform: uppercase;
+            width: 100%;
+            transition: all 0.2s;
+        }
+
+        .modal-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(255, 77, 0, 0.4);
+        }
     </style>
 </head>
 
@@ -1077,16 +1233,83 @@
     <div id="message">NOTIFICATION_INCOMING</div>
     <div id="animationStage"></div>
 
+    <!-- Name Prompt Modal -->
+    <div id="nameModal" class="modal-overlay">
+        <div class="modal-content">
+            <h2>Identify Node</h2>
+            <p>SET YOUR DISCOVERY NAME FOR THE NETWORK</p>
+            <input type="text" id="userNameInput" class="modal-input" placeholder="ENTER NAME..." maxlength="20"
+                onkeydown="if(event.key==='Enter') submitUserName()">
+            <button class="modal-btn" onclick="submitUserName()">INITIALIZE_NODE</button>
+        </div>
+    </div>
+
+    <!-- Help Modal -->
+    <div id="helpModal" class="modal-overlay" style="display: none;"
+        onclick="if(event.target===this) toggleHelpModal()">
+        <div class="modal-content" style="max-width: 500px; text-align: left; background: var(--bg);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+                <h2 style="margin-bottom: 0;">Quick Start Guide</h2>
+                <button onclick="toggleHelpModal()"
+                    style="background: none; border: none; color: var(--orange); font-size: 2rem; cursor: pointer; line-height: 1;">&times;</button>
+            </div>
+            <ul class="quick-guide-list">
+                <li><span>1</span>
+                    <div><strong>Choose Mode:</strong> Select "Same WiFi" if you're next to each other, or "Anywhere"
+                        for long-distance sharing.</div>
+                </li>
+                <li><span>2</span>
+                    <div><strong>Connect:</strong> In Same WiFi mode, devices appear below automatically. In Anywhere
+                        mode, use the "Connect" tab to share a pairing code.</div>
+                </li>
+                <li><span>3</span>
+                    <div><strong>Transfer:</strong> Once connected, head to the "Transfer" tab to drop files and watch
+                        them fly.</div>
+                </li>
+            </ul>
+        </div>
+    </div>
+
     <div class="app-container">
         <header class="header">
             <div class="wordmark-container">
                 <div class="wordmark">
-                    <div class="logo-dot"></div> SWIFT
+                    <img src="{{ url_for('static', filename='favicon.png') }}" class="logo-image" alt="Logo"> SWIFT
                 </div>
                 <div class="tagline">SECURE WIRELESS INSTANT FILE TRANSFER</div>
             </div>
             <div class="header-controls">
-                <button class="theme-toggle" onclick="toggleTheme()" id="themeToggleBtn">☼</button>
+                <button class="theme-toggle" onclick="toggleHelpModal()" id="helpBtn">?</button>
+                <button class="theme-toggle" onclick="toggleTheme()" id="themeToggleBtn">
+                    <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" stroke="#ffffff">
+                        <g id="SVGRepo_bgCarrier" stroke-width="0"></g>
+                        <g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g>
+                        <g id="SVGRepo_iconCarrier">
+                            <g clip-path="url(#FF5C00clip0_429_11039)">
+                                <circle cx="12" cy="12" r="4" stroke="#FF5C00" stroke-width="2.5"
+                                    stroke-linejoin="round"></circle>
+                                <path d="M20 12H21" stroke="#FF5C00" stroke-width="2.5" stroke-linecap="round"></path>
+                                <path d="M3 12H4" stroke="#FF5C00" stroke-width="2.5" stroke-linecap="round"></path>
+                                <path d="M12 20L12 21" stroke="#FF5C00" stroke-width="2.5" stroke-linecap="round">
+                                </path>
+                                <path d="M12 3L12 4" stroke="#FF5C00" stroke-width="2.5" stroke-linecap="round"></path>
+                                <path d="M17.6569 17.6569L18.364 18.364" stroke="#FF5C00" stroke-width="2.5"
+                                    stroke-linecap="round"></path>
+                                <path d="M5.63605 5.63604L6.34315 6.34315" stroke="#FF5C00" stroke-width="2.5"
+                                    stroke-linecap="round"></path>
+                                <path d="M6.34314 17.6569L5.63603 18.364" stroke="#FF5C00" stroke-width="2.5"
+                                    stroke-linecap="round"></path>
+                                <path d="M18.364 5.63604L17.6568 6.34315" stroke="#FF5C00" stroke-width="2.5"
+                                    stroke-linecap="round"></path>
+                            </g>
+                            <defs>
+                                <clipPath id="clip0_429_11039">
+                                    <rect width="24" height="24" fill="white"></rect>
+                                </clipPath>
+                            </defs>
+                        </g>
+                    </svg>
+                </button>
                 <div class="header-meta">
                     <div id="connectionStatus">IDLE</div>
                 </div>
@@ -1097,8 +1320,8 @@
         <div class="mode-switch-container">
             <div id="deviceName" onclick="editDeviceName()">NODE_INITIALIZING...</div>
             <div class="mode-switch">
-                <button id="modeLocal" class="mode-btn active" onclick="setMode('LOCAL')">Local Network</button>
-                <button id="modeCloud" class="mode-btn" onclick="setMode('CLOUD')">Cloud Relay</button>
+                <button id="modeLocal" class="mode-btn active" onclick="setMode('LOCAL')">Same WiFi</button>
+                <button id="modeCloud" class="mode-btn" onclick="setMode('CLOUD')">Anywhere</button>
             </div>
         </div>
 
@@ -1195,8 +1418,8 @@
                         Enter remote sequence</p>
                     <input type="text" id="joinCode" placeholder="000000" maxlength="6">
                     <div style="display: flex; gap: 12px;">
-                        <button onclick="joinByCode()" class="btn-pair" style="flex: 2;">Connect Node</button>
-                        <button onclick="copyShareLink()" class="btn-pair"
+                        <button onclick="joinByCode(this)" class="btn-pair" style="flex: 2;">Connect Node</button>
+                        <button onclick="copyShareLink(this)" class="btn-pair"
                             style="flex: 1; background: var(--orange); color: #000;">Copy Link</button>
                     </div>
                 </div>
@@ -1204,24 +1427,46 @@
         </div>
 
         <footer class="simple-footer">
-            <div>Swift_by_Yash</div>
-            <div>DIRECT_P2P_ENCRYPTED</div>
-            <div><span class="status-indicator"></span> SYSTEM_READY</div>
-        </footer>
+            <div>SWIFT_BY_YASH</div>
+
     </div>
 
+
+
     <script>
+        // Name Management
+        function submitUserName() {
+            const name = document.getElementById('userNameInput').value.trim();
+            if (name) {
+                saveDeviceName(name);
+                document.getElementById('nameModal').style.display = 'none';
+            } else {
+                showMessage('Name Required', 'error');
+            }
+        }
+
+        // Help Modal
+        function toggleHelpModal() {
+            const modal = document.getElementById('helpModal');
+            modal.style.display = modal.style.display === 'flex' ? 'none' : 'flex';
+        }
+
+        const SUN_SVG = `<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" stroke="#ffffff"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <g clip-path="url(#FF5C00clip0_429_11039)"> <circle cx="12" cy="12" r="4" stroke="#FF5C00" stroke-width="2.5" stroke-linejoin="round"></circle> <path d="M20 12H21" stroke="#FF5C00" stroke-width="2.5" stroke-linecap="round"></path> <path d="M3 12H4" stroke="#FF5C00" stroke-width="2.5" stroke-linecap="round"></path> <path d="M12 20L12 21" stroke="#FF5C00" stroke-width="2.5" stroke-linecap="round"></path> <path d="M12 3L12 4" stroke="#FF5C00" stroke-width="2.5" stroke-linecap="round"></path> <path d="M17.6569 17.6569L18.364 18.364" stroke="#FF5C00" stroke-width="2.5" stroke-linecap="round"></path> <path d="M5.63605 5.63604L6.34315 6.34315" stroke="#FF5C00" stroke-width="2.5" stroke-linecap="round"></path> <path d="M6.34314 17.6569L5.63603 18.364" stroke="#FF5C00" stroke-width="2.5" stroke-linecap="round"></path> <path d="M18.364 5.63604L17.6568 6.34315" stroke="#FF5C00" stroke-width="2.5" stroke-linecap="round"></path> </g> <defs> <clipPath id="clip0_429_11039"> <rect width="24" height="24" fill="white"></rect> </clipPath> </defs> </g></svg>`;
+        const MOON_SVG = `<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <g clip-path="url(#clip0_429_11017)"> <path d="M20.9955 11.7115L22.2448 11.6721C22.2326 11.2847 22.0414 10.9249 21.7272 10.698C21.413 10.4711 21.0113 10.4029 20.6397 10.5132L20.9955 11.7115ZM12.2885 3.00454L13.4868 3.36028C13.5971 2.98873 13.5289 2.58703 13.302 2.2728C13.0751 1.95857 12.7153 1.76736 12.3279 1.75516L12.2885 3.00454ZM20.6397 10.5132C20.1216 10.667 19.5716 10.75 19 10.75V13.25C19.815 13.25 20.6046 13.1314 21.3512 12.9098L20.6397 10.5132ZM19 10.75C15.8244 10.75 13.25 8.17564 13.25 5H10.75C10.75 9.55635 14.4437 13.25 19 13.25V10.75ZM13.25 5C13.25 4.42841 13.333 3.87841 13.4868 3.36028L11.0902 2.64879C10.8686 3.39542 10.75 4.18496 10.75 5H13.25ZM12 4.25C12.0834 4.25 12.1665 4.25131 12.2492 4.25392L12.3279 1.75516C12.219 1.75173 12.1097 1.75 12 1.75V4.25ZM4.25 12C4.25 7.71979 7.71979 4.25 12 4.25V1.75C6.33908 1.75 1.75 6.33908 1.75 12H4.25ZM12 19.75C7.71979 19.75 4.25 16.2802 4.25 12H1.75C1.75 17.6609 6.33908 22.25 12 22.25V19.75ZM19.75 12C19.75 16.2802 16.2802 19.75 12 19.75V22.25C17.6609 22.25 22.25 17.6609 22.25 12H19.75ZM19.7461 11.7508C19.7487 11.8335 19.75 11.9166 19.75 12H22.25C22.25 11.8903 22.2483 11.781 22.2448 11.6721L19.7461 11.7508Z" fill="#E2C96E"></path> </g> <defs> <clipPath id="clip0_429_11017"> <rect width="24" height="24" fill="white"></rect> </clipPath> </defs> </g></svg>`;
+
         // Theme Management
         function toggleTheme() {
             const isLight = document.body.classList.toggle('light-theme');
-            document.getElementById('themeToggleBtn').innerText = isLight ? '☾' : '☼';
+            document.getElementById('themeToggleBtn').innerHTML = isLight ? MOON_SVG : SUN_SVG;
             localStorage.setItem('theme', isLight ? 'light' : 'dark');
         }
 
         // Apply saved theme
         if (localStorage.getItem('theme') === 'light') {
             document.body.classList.add('light-theme');
-            document.getElementById('themeToggleBtn').innerText = '☾';
+            document.getElementById('themeToggleBtn').innerHTML = MOON_SVG;
+        } else {
+            document.getElementById('themeToggleBtn').innerHTML = SUN_SVG;
         }
 
         const ICE_SERVERS = [
@@ -1372,6 +1617,9 @@
                 state.deviceId = data.device_id;
 
                 const storedName = localStorage.getItem('swift_device_name');
+                if (!storedName) {
+                    document.getElementById('nameModal').style.display = 'flex';
+                }
                 state.deviceName = storedName || `NODE_${data.device_id.substring(0, 8).toUpperCase()}`;
                 document.getElementById('deviceName').innerText = state.deviceName;
 
@@ -1385,9 +1633,22 @@
             } catch (error) { log('Init failed'); }
         }
 
-        async function copyShareLink() {
+        async function copyShareLink(btn) {
             const url = `${window.location.origin}${window.location.pathname}?pair=${state.deviceId}`;
             await navigator.clipboard.writeText(url);
+
+            if (btn) {
+                const originalText = btn.innerText;
+                btn.innerText = 'COPIED!';
+                btn.style.background = 'var(--green)';
+                btn.style.color = '#000';
+
+                setTimeout(() => {
+                    btn.innerText = originalText;
+                    btn.style.background = 'var(--orange)';
+                }, 2000);
+            }
+
             showMessage('Link Copied', 'success');
         }
 
@@ -1470,18 +1731,34 @@
             container.innerHTML = Object.entries(peers).map(([id, info]) => {
                 if (id === state.deviceId) return '';
                 return `
-                <div class="peer-card" onclick="connectToPeer('${id}', '${info.device_name}')">
+                <div class="peer-card" onclick="connectToPeerWithFeedback('${id}', '${info.device_name}')">
                     <div class="peer-name">${info.device_name}</div>
                     <div class="peer-id">ID: ${id.substring(0, 12)}...</div>
-                    <button class="btn-connect">CONNECT</button>
+                    <button class="btn-connect" id="btn-conn-${id}">CONNECT</button>
                 </div>
             `}).join('');
         }
 
+        function connectToPeerWithFeedback(peerId, peerName) {
+            const btn = document.getElementById(`btn-conn-${peerId}`);
+            if (btn) {
+                btn.innerText = 'LINKING...';
+                btn.classList.add('btn-loading');
+            }
+            connectToPeer(peerId, peerName);
+        }
+
         // Logic: Pairing
-        async function joinByCode() {
+        async function joinByCode(btn) {
             const code = document.getElementById('joinCode').value.trim();
             if (code.length !== 6) return showMessage('Invalid Code', 'error');
+
+            let originalText = 'Connect Node';
+            if (btn) {
+                originalText = btn.innerText;
+                btn.innerText = 'LINKING...';
+                btn.classList.add('btn-loading');
+            }
 
             try {
                 const response = await fetch(`/api/get-peer-by-code/${code}`);
@@ -1499,13 +1776,34 @@
                         state.currentPeer = data.device_id;
                         switchTab('transfer');
                         showMessage('Cloud Session Ready', 'success');
+
+                        if (btn) {
+                            btn.innerText = originalText;
+                            btn.classList.remove('btn-loading');
+                        }
                     } else {
                         connectToPeer(data.device_id, data.device_name);
+                        setTimeout(() => {
+                            if (btn) {
+                                btn.innerText = originalText;
+                                btn.classList.remove('btn-loading');
+                            }
+                        }, 2000);
                     }
                 } else {
                     showMessage('Peer not found', 'error');
+                    if (btn) {
+                        btn.innerText = originalText;
+                        btn.classList.remove('btn-loading');
+                    }
                 }
-            } catch (error) { showMessage('Pairing failed', 'error'); }
+            } catch (error) {
+                showMessage('Pairing failed', 'error');
+                if (btn) {
+                    btn.innerText = originalText;
+                    btn.classList.remove('btn-loading');
+                }
+            }
         }
 
         // Logic: Mode Toggle
@@ -1558,16 +1856,44 @@
                 handleSignal(sig);
             });
 
+            state.socket.on('peer_left', () => {
+                log('[Socket] Peer disconnected from cloud relay');
+                showMessage('Cloud Peer Left', 'error');
+                disconnect();
+            });
+
             // ── RELAY HANDLERS ──
             state.socket.on('relay-chunk-start', data => {
                 log(`[Relay] Incoming file: ${data.metadata.name}`);
                 state.isRelayMode = true;
+                const transferId = 'recv-' + Math.random().toString(36).substr(2, 9);
                 state.currentFile = {
                     name: data.metadata.name,
                     size: data.metadata.size,
                     received: 0,
-                    chunks: []
+                    chunks: [],
+                    id: transferId,
+                    startTime: Date.now()
                 };
+
+                const box = document.createElement('div');
+                box.className = 'transfer-box slide-in-up';
+                box.id = transferId;
+                box.style.borderLeft = '8px solid var(--purple)';
+                box.innerHTML = `
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                        <div class="transfer-file-name">↓ ${data.metadata.name} (Cloud)</div>
+                    </div>
+                    <div class="progress-track"><div class="progress-fill" id="${transferId}-fill" style="background: var(--purple);"></div></div>
+                    <div class="transfer-meta">
+                        <span id="${transferId}-prog">0%</span>
+                        <div class="transfer-stats">
+                            <span id="${transferId}-speed">0 B/s</span>
+                            <span id="${transferId}-eta" class="eta-label">--</span>
+                        </div>
+                    </div>
+                `;
+                document.getElementById('activeTransfers').appendChild(box);
                 switchTab('transfer');
             });
 
@@ -1576,9 +1902,24 @@
                 state.currentFile.chunks.push(data.buffer);
                 state.currentFile.received += data.buffer.byteLength || data.buffer.length;
 
-                const p = Math.round((state.currentFile.received / state.currentFile.size) * 100);
-                document.getElementById('progressBar').style.width = p + '%';
-                document.getElementById('progressPercent').innerText = p + '%';
+                const rf = state.currentFile;
+                const p = Math.round((rf.received / rf.size) * 100);
+                const fill = document.getElementById(`${rf.id}-fill`);
+                const label = document.getElementById(`${rf.id}-prog`);
+                if (fill) fill.style.width = p + '%';
+                if (label) label.innerText = p + '%';
+
+                const elapsed = (Date.now() - rf.startTime) / 1000;
+                if (elapsed > 0) {
+                    const speed = rf.received / elapsed;
+                    const remaining = (rf.size - rf.received) / speed;
+
+                    const speedEl = document.getElementById(`${rf.id}-speed`);
+                    if (speedEl) speedEl.innerText = formatBytes(speed) + '/s';
+
+                    const etaEl = document.getElementById(`${rf.id}-eta`);
+                    if (etaEl) etaEl.innerText = isFinite(remaining) && remaining > 0 ? `${Math.round(remaining)}s left` : '--';
+                }
 
                 state.socket.emit('relay-ack', { code: state.pairingCode });
             });
@@ -1588,6 +1929,8 @@
                 const blob = new Blob(state.currentFile.chunks);
                 downloadBlob(blob, state.currentFile.name);
                 log(`[Relay] Received ${state.currentFile.name}`);
+                const box = document.getElementById(state.currentFile.id);
+                if (box) setTimeout(() => { box.remove(); }, 1000);
                 state.currentFile = null;
                 state.isRelayMode = false;
             });
@@ -1717,7 +2060,12 @@
             } catch (e) { log(`Signal failed: ${e.message}`); }
         }
 
-        function disconnect() {
+        function disconnect(isRemote = false) {
+            // Notify peer if this is a local disconnect and we know who we were talking to
+            if (!isRemote && state.currentPeer && state.mode !== 'CLOUD') {
+                sendSignal(state.currentPeer, { type: 'disconnect' });
+            }
+
             if (state.peerConnection) {
                 state.peerConnection.close();
                 state.peerConnection = null;
@@ -1725,6 +2073,11 @@
             state.dataChannel = null;
             state.currentPeer = null;
             state.isHandshaking = false;
+
+            // Clean up UI
+            const transfersContainer = document.getElementById('activeTransfers');
+            if (transfersContainer) transfersContainer.innerHTML = '';
+
             updateUI();
             switchTab('discover');
             showMessage('Link Severed', 'info');
@@ -1734,8 +2087,10 @@
             setInterval(async () => {
                 if (state.mode === 'CLOUD') return; // Socket.IO handles this
 
-                // Discovery
-                if (document.getElementById('discover').classList.contains('active')) discoverPeers();
+                // Discovery (Pause if handshaking so UI buttons don't reset while loading)
+                if (!state.isHandshaking && document.getElementById('discover').classList.contains('active')) {
+                    discoverPeers();
+                }
 
                 // Polling for signals
                 try {
@@ -1754,11 +2109,26 @@
             const pc = state.peerConnection;
             const from = sig.from;
 
-            if (sig.type === 'offer') {
-                // If already connected and data channel is open, ignore
-                if (state.dataChannel && state.dataChannel.readyState === 'open' && state.currentPeer === from) {
-                    return;
+            if (sig.type === 'disconnect') {
+                if (state.currentPeer === from) {
+                    log(`Peer ${from} closed the connection.`);
+                    disconnect(true);
                 }
+                return;
+            }
+
+            if (sig.type === 'offer') {
+                // Glare resolution: If we are already negotiating with them, and our ID is smaller, ignore their offer.
+                if (state.isHandshaking && state.currentPeer === from) {
+                    if (state.deviceId < from) {
+                        log('Glare: Ignored incoming offer (we are impolite)');
+                        return;
+                    }
+                }
+
+                // If they are sending an offer, they want a new connection. 
+                // Always reset our state to accept it, even if we thought we were connected.
+
 
                 const peerInfo = state.peers[from];
                 const displayName = peerInfo ? peerInfo.device_name : from.substring(0, 8);
@@ -1828,11 +2198,16 @@
                     if (msg.type === 'complete') endReceive();
                     if (msg.type === 'cancel') {
                         if (state.receivingFile) {
+                            state.receivingFile.isCancelled = true;
                             const box = document.getElementById(state.receivingFile.id);
                             if (box) box.style.opacity = '0.3';
-                            state.receivingFile = null;
-                            showMessage('Peer Cancelled', 'error');
                         }
+                        if (state.sendingFile) {
+                            state.sendingFile.isCancelled = true;
+                            const box = document.getElementById(state.sendingFile.id);
+                            if (box) box.style.opacity = '0.3';
+                        }
+                        showMessage('Peer Cancelled', 'error');
                     }
                 }
             };
@@ -1971,6 +2346,15 @@
             state.dataChannel.send(JSON.stringify({ type: 'file-meta', fileName: file.name, fileSize: file.size }));
 
             const reader = new FileReader();
+            reader.onerror = () => {
+                log('File read error');
+                showMessage('Disk Read Error', 'error');
+                if (box) box.style.borderColor = 'var(--orange)';
+                if (state.dataChannel && state.dataChannel.readyState === 'open') {
+                    state.dataChannel.send(JSON.stringify({ type: 'cancel' }));
+                }
+                resolve();
+            };
             let offset = 0;
 
             return new Promise((resolve) => {
@@ -2056,7 +2440,10 @@
                 <div class="progress-track"><div class="progress-fill" id="${transferId}-fill" style="background: var(--green);"></div></div>
                 <div class="transfer-meta">
                     <span id="${transferId}-prog">0%</span>
-                    <div><span id="${transferId}-speed">SYNCING_</span></div>
+                    <div class="transfer-stats">
+                        <span id="${transferId}-speed">0 B/s</span>
+                        <span id="${transferId}-eta" class="eta-label">--</span>
+                    </div>
                 </div>
             `;
             document.getElementById('activeTransfers').appendChild(box);
@@ -2073,12 +2460,17 @@
                 state.receivingFile.chunks = []; // Clear RAM
                 if (box) box.style.opacity = '0.3';
                 log('Reception cancelled by user');
+
+                // Notify sender that we canceled
+                if (state.dataChannel && state.dataChannel.readyState === 'open') {
+                    state.dataChannel.send(JSON.stringify({ type: 'cancel' }));
+                }
             }
         }
 
         function receiveChunk(data) {
             const rf = state.receivingFile;
-            if (!rf) return;
+            if (!rf || rf.isCancelled) return;
             rf.chunks.push(data);
             rf.received += data.byteLength;
 
@@ -2087,6 +2479,18 @@
             const label = document.getElementById(`${rf.id}-prog`);
             if (fill) fill.style.width = prog + '%';
             if (label) label.innerText = Math.round(prog) + '%';
+
+            const elapsed = (Date.now() - rf.startTime) / 1000;
+            if (elapsed > 0) {
+                const speed = rf.received / elapsed;
+                const remaining = (rf.fileSize - rf.received) / speed;
+
+                const speedEl = document.getElementById(`${rf.id}-speed`);
+                if (speedEl) speedEl.innerText = formatBytes(speed) + '/s';
+
+                const etaEl = document.getElementById(`${rf.id}-eta`);
+                if (etaEl) etaEl.innerText = isFinite(remaining) && remaining > 0 ? `${Math.round(remaining)}s left` : '--';
+            }
 
             if (rf.received % (CHUNK_SIZE * 10) === 0) spawnEmoji('📂');
         }
@@ -2118,6 +2522,25 @@
             if (state.mode !== 'CLOUD') return;
             log(`[Relay] Sending ${file.name} via server...`);
 
+            const transferId = 'send-' + Math.random().toString(36).substr(2, 9);
+            const box = document.createElement('div');
+            box.className = 'transfer-box slide-in-up';
+            box.id = transferId;
+            box.innerHTML = `
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                    <div class="transfer-file-name">↑ ${file.name} (Cloud)</div>
+                </div>
+                <div class="progress-track"><div class="progress-fill" id="${transferId}-fill"></div></div>
+                <div class="transfer-meta">
+                    <span id="${transferId}-prog">0%</span>
+                    <div class="transfer-stats">
+                        <span id="${transferId}-speed">0 B/s</span>
+                        <span id="${transferId}-eta" class="eta-label">--</span>
+                    </div>
+                </div>
+            `;
+            document.getElementById('activeTransfers').appendChild(box);
+
             state.socket.emit('relay-chunk-start', {
                 code: state.pairingCode,
                 metadata: { name: file.name, size: file.size }
@@ -2127,30 +2550,57 @@
             let offset = 0;
             const RELAY_WINDOW = 4;
             let inFlight = 0;
+            const startTime = Date.now();
 
-            while (offset < file.size) {
-                const chunk = await file.slice(offset, offset + CHUNK_SIZE).arrayBuffer();
-                state.socket.emit('relay-chunk', {
-                    code: state.pairingCode,
-                    buffer: chunk
-                });
-                inFlight++;
+            try {
+                while (offset < file.size) {
+                    const chunk = await file.slice(offset, offset + CHUNK_SIZE).arrayBuffer();
+                    state.socket.emit('relay-chunk', {
+                        code: state.pairingCode,
+                        buffer: chunk
+                    });
+                    inFlight++;
 
-                if (inFlight >= RELAY_WINDOW) {
-                    await new Promise(r => { state.relayAckResolve = r; });
-                    inFlight = 0;
+                    if (inFlight >= RELAY_WINDOW) {
+                        await new Promise((resolve, reject) => {
+                            state.relayAckResolve = resolve;
+                            setTimeout(() => reject(new Error('ACK Timeout')), 10000);
+                        });
+                        inFlight = 0;
+                    }
+
+                    offset += chunk.byteLength;
+                    const p = Math.round((offset / file.size) * 100);
+
+                    const fill = document.getElementById(`${transferId}-fill`);
+                    const label = document.getElementById(`${transferId}-prog`);
+                    if (fill) fill.style.width = p + '%';
+                    if (label) label.innerText = p + '%';
+
+                    const elapsed = (Date.now() - startTime) / 1000;
+                    if (elapsed > 0) {
+                        const speed = offset / elapsed;
+                        const remaining = (file.size - offset) / speed;
+
+                        const speedEl = document.getElementById(`${transferId}-speed`);
+                        if (speedEl) speedEl.innerText = formatBytes(speed) + '/s';
+
+                        const etaEl = document.getElementById(`${transferId}-eta`);
+                        if (etaEl) etaEl.innerText = isFinite(remaining) && remaining > 0 ? `${Math.round(remaining)}s left` : '--';
+                    }
                 }
 
-                offset += chunk.byteLength;
-                const p = Math.round((offset / file.size) * 100);
-                // Update UI using existing progress bar if needed, or log
-                if (p % 10 === 0) log(`[Relay] ${p}%`);
+                state.socket.emit('relay-chunk-end', { code: state.pairingCode });
+                log(`[Relay] Sent ${file.name}`);
+                addToHistory(file.name, file.size);
+                showMessage('Relay Transfer Complete', 'success');
+                setTimeout(() => { const b = document.getElementById(transferId); if (b) b.remove(); }, 1000);
+            } catch (err) {
+                log(`[Relay] Transfer failed: ${err.message}`);
+                showMessage('Cloud Link Dropped', 'error');
+                const fill = document.getElementById(`${transferId}-fill`);
+                if (fill) fill.style.background = 'var(--orange)';
             }
-
-            state.socket.emit('relay-chunk-end', { code: state.pairingCode });
-            log(`[Relay] Sent ${file.name}`);
-            addToHistory(file.name, file.size);
-            showMessage('Relay Transfer Complete', 'success');
         }
 
         function updateUI() {

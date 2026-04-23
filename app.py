@@ -141,6 +141,27 @@ def get_peers():
         current_device = session.get('device_id')
 
         with peers_lock:
+            # Update timestamp for current device to act as heartbeat
+            if current_device in peers:
+                peers[current_device]['timestamp'] = datetime.now().isoformat()
+                
+            # Cleanup stale peers (inactive for > 60 seconds)
+            now = datetime.now()
+            stale_keys = []
+            for device_id, info in peers.items():
+                try:
+                    timestamp = datetime.fromisoformat(info['timestamp'])
+                    if (now - timestamp).total_seconds() > 60:
+                        stale_keys.append(device_id)
+                except:
+                    stale_keys.append(device_id)
+                    
+            for device_id in stale_keys:
+                code = peers[device_id].get('pairing_code')
+                if code in pairing_codes:
+                    del pairing_codes[code]
+                del peers[device_id]
+
             # Get all peers except current device
             available_peers = {
                 device_id: info
@@ -275,70 +296,113 @@ def health():
 # Socket.IO Events for CLOUD MODE
 @socketio.on('join')
 def on_join(data):
-    room = data.get('code')
-    device_id = data.get('deviceId')
-    role = data.get('role', 'receiver') # Default to receiver
-    
-    if room:
-        join_room(room)
-        if room not in rooms:
-            rooms[room] = {'sender_sid': None, 'receiver_sid': None, 'created_at': time.time()}
+    try:
+        room = data.get('code')
+        device_id = data.get('deviceId')
+        role = data.get('role', 'receiver') # Default to receiver
         
-        if role == 'sender':
-            rooms[room]['sender_sid'] = request.sid
-        else:
-            rooms[room]['receiver_sid'] = request.sid
-            if rooms[room]['sender_sid']:
-                emit('peer_joined', {'room': room, 'peerId': device_id, 'role': 'receiver'}, to=rooms[room]['sender_sid'])
-        
-        logger.info(f"Socket: {role.upper()} {device_id} joined room {room}")
-        emit('joined', {'role': role}, room=request.sid)
+        if room:
+            join_room(room)
+            if room not in rooms:
+                rooms[room] = {'sender_sid': None, 'receiver_sid': None, 'created_at': time.time()}
+            
+            if role == 'sender':
+                rooms[room]['sender_sid'] = request.sid
+            else:
+                rooms[room]['receiver_sid'] = request.sid
+                if rooms[room]['sender_sid']:
+                    emit('peer_joined', {'room': room, 'peerId': device_id, 'role': 'receiver'}, to=rooms[room]['sender_sid'])
+            
+            logger.info(f"Socket: {role.upper()} {device_id} joined room {room}")
+            emit('joined', {'role': role}, room=request.sid)
+    except Exception as e:
+        logger.error(f"Error in on_join: {e}")
 
 @socketio.on('offer')
 def on_offer(data):
-    room = data.get('code')
-    if room:
-        logger.info(f"Socket: [OFFER] From {data.get('from')} in room {room}")
-        emit('offer', data, to=room, include_self=False)
+    try:
+        room = data.get('code')
+        if room:
+            logger.info(f"Socket: [OFFER] From {data.get('from')} in room {room}")
+            emit('offer', data, to=room, include_self=False)
+    except Exception as e:
+        logger.error(f"Error in on_offer: {e}")
 
 @socketio.on('answer')
 def on_answer(data):
-    room = data.get('code')
-    if room:
-        logger.info(f"Socket: [ANSWER] From {data.get('from')} in room {room}")
-        emit('answer', data, to=room, include_self=False)
+    try:
+        room = data.get('code')
+        if room:
+            logger.info(f"Socket: [ANSWER] From {data.get('from')} in room {room}")
+            emit('answer', data, to=room, include_self=False)
+    except Exception as e:
+        logger.error(f"Error in on_answer: {e}")
 
 @socketio.on('ice')
 def on_ice(data):
-    room = data.get('code')
-    if room:
-        emit('ice', data, to=room, include_self=False)
+    try:
+        room = data.get('code')
+        if room:
+            emit('ice', data, to=room, include_self=False)
+    except Exception as e:
+        logger.error(f"Error in on_ice: {e}")
 
 # ─── RELAY FALLBACK EVENTS ───
 
 @socketio.on('relay-chunk-start')
 def on_relay_start(data):
-    room = data.get('code')
-    if room in rooms and rooms[room]['receiver_sid']:
-        emit('relay-chunk-start', data, to=rooms[room]['receiver_sid'])
+    try:
+        room = data.get('code')
+        if room in rooms and rooms[room]['receiver_sid']:
+            emit('relay-chunk-start', data, to=rooms[room]['receiver_sid'])
+    except Exception as e:
+        logger.error(f"Error in on_relay_start: {e}")
 
 @socketio.on('relay-chunk')
 def on_relay_chunk(data):
-    room = data.get('code')
-    if room in rooms and rooms[room]['receiver_sid']:
-        emit('relay-chunk', data, to=rooms[room]['receiver_sid'])
+    try:
+        room = data.get('code')
+        if room in rooms and rooms[room]['receiver_sid']:
+            emit('relay-chunk', data, to=rooms[room]['receiver_sid'])
+    except Exception as e:
+        logger.error(f"Error in on_relay_chunk: {e}")
 
 @socketio.on('relay-chunk-end')
 def on_relay_end(data):
-    room = data.get('code')
-    if room in rooms and rooms[room]['receiver_sid']:
-        emit('relay-chunk-end', data, to=rooms[room]['receiver_sid'])
+    try:
+        room = data.get('code')
+        if room in rooms and rooms[room]['receiver_sid']:
+            emit('relay-chunk-end', data, to=rooms[room]['receiver_sid'])
+    except Exception as e:
+        logger.error(f"Error in on_relay_end: {e}")
 
 @socketio.on('relay-ack')
 def on_relay_ack(data):
-    room = data.get('code')
-    if room in rooms and rooms[room]['sender_sid']:
-        emit('relay-ack', data, to=rooms[room]['sender_sid'])
+    try:
+        room = data.get('code')
+        if room in rooms and rooms[room]['sender_sid']:
+            emit('relay-ack', data, to=rooms[room]['sender_sid'])
+    except Exception as e:
+        logger.error(f"Error in on_relay_ack: {e}")
+
+@socketio.on('disconnect')
+def on_disconnect():
+    try:
+        for room, data in list(rooms.items()):
+            if data['sender_sid'] == request.sid:
+                data['sender_sid'] = None
+                if data['receiver_sid']:
+                    emit('peer_left', {'role': 'sender'}, to=data['receiver_sid'])
+            elif data['receiver_sid'] == request.sid:
+                data['receiver_sid'] = None
+                if data['sender_sid']:
+                    emit('peer_left', {'role': 'receiver'}, to=data['sender_sid'])
+            
+            # Cleanup empty rooms
+            if not data['sender_sid'] and not data['receiver_sid']:
+                del rooms[room]
+    except Exception as e:
+        logger.error(f"Error in on_disconnect: {e}")
 
 if __name__ == '__main__':
     local_ip = get_local_ip()
