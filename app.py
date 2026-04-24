@@ -103,6 +103,31 @@ def device_info():
         'device_name': f'Device-{device_id}'
     })
 
+def get_client_ip():
+    """Extract real client IP even behind reverse proxies like Ngrok/Nginx"""
+    forwarded = request.headers.get('X-Forwarded-For')
+    if forwarded:
+        return forwarded.split(',')[0].strip()
+    return request.remote_addr or ''
+
+def is_same_network(ip1, ip2):
+    """Strictly verify if two IPs are on the exact same network/subnet"""
+    if ip1 == ip2:
+        return True
+    
+    # Handle local machine testing (localhost vs LAN IP)
+    local_loopbacks = ('127.0.0.1', '::1', 'localhost')
+    if ip1 in local_loopbacks and ip2.startswith(('192.168.', '10.', '172.')):
+        return True
+    if ip2 in local_loopbacks and ip1.startswith(('192.168.', '10.', '172.')):
+        return True
+        
+    # If both are private IPs, they MUST be on the exact same /24 subnet (e.g. 192.168.0.X)
+    if ip1.startswith('192.168.') and ip2.startswith('192.168.'):
+        return ip1.split('.')[:3] == ip2.split('.')[:3]
+        
+    return False
+
 @app.route('/api/register-peer', methods=['POST'])
 def register_peer():
     """Register a peer for P2P discovery"""
@@ -118,7 +143,7 @@ def register_peer():
                 'device_name': data.get('device_name', f'Device-{device_id}'),
                 'pairing_code': pairing_code,
                 'timestamp': datetime.now().isoformat(),
-                'client_ip': request.remote_addr,
+                'client_ip': get_client_ip(),
                 'server_port': data.get('port', 5000)
             }
             pairing_codes[pairing_code] = device_id
@@ -138,7 +163,7 @@ def register_peer():
 def get_peers():
     """Get list of available peers for P2P connection"""
     try:
-        current_device = session.get('device_id')
+        current_device = request.args.get('deviceId') or session.get('device_id')
 
         with peers_lock:
             # Update timestamp for current device to act as heartbeat
@@ -162,12 +187,19 @@ def get_peers():
                     del pairing_codes[code]
                 del peers[device_id]
 
-            # Get all peers except current device
-            available_peers = {
-                device_id: info
-                for device_id, info in peers.items()
-                if device_id != current_device
-            }
+            # Get real client IP using the helper
+            current_ip = get_client_ip()
+
+            available_peers = {}
+            for dev_id, info in peers.items():
+                if dev_id == current_device:
+                    continue
+                
+                peer_ip = info.get('client_ip', '')
+                
+                # Strictly enforce they are on the exact same network/subnet
+                if is_same_network(current_ip, peer_ip):
+                    available_peers[dev_id] = info
 
         logger.debug(f"Available peers for {current_device}: {len(available_peers)}")
         return jsonify({

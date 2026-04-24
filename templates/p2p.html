@@ -1673,7 +1673,8 @@
 
         async function discoverPeers() {
             try {
-                const response = await fetch('/api/peers');
+                if (!state.deviceId) return;
+                const response = await fetch(`/api/peers?deviceId=${state.deviceId}`);
                 const data = await response.json();
                 state.peers = data.peers;
                 displayPeers(data.peers);
@@ -1808,6 +1809,12 @@
 
         // Logic: Mode Toggle
         function setMode(m) {
+            if (state.currentPeer) {
+                showMessage('Disconnect first to change modes', 'error');
+                return;
+            }
+            if (state.mode === m) return;
+            
             state.mode = m;
             const btnLocal = document.getElementById('modeLocal');
             const btnCloud = document.getElementById('modeCloud');
@@ -2199,18 +2206,38 @@
                     if (msg.type === 'cancel') {
                         if (state.receivingFile) {
                             state.receivingFile.isCancelled = true;
-                            const box = document.getElementById(state.receivingFile.id);
-                            if (box) box.style.opacity = '0.3';
+                            markBoxAsCancelled(state.receivingFile.id);
                         }
                         if (state.sendingFile) {
                             state.sendingFile.isCancelled = true;
-                            const box = document.getElementById(state.sendingFile.id);
-                            if (box) box.style.opacity = '0.3';
+                            markBoxAsCancelled(state.sendingFile.id);
                         }
                         showMessage('Peer Cancelled', 'error');
                     }
                 }
             };
+        }
+
+        function markBoxAsCancelled(id) {
+            const box = document.getElementById(id);
+            if (!box) return;
+            box.style.opacity = '0.6';
+            const btn = box.querySelector('button');
+            if (btn) {
+                btn.innerHTML = '✕';
+                btn.title = 'Dismiss';
+                btn.style.background = 'var(--surface)';
+                btn.style.color = 'var(--text)';
+                btn.style.border = '1px solid #333';
+                btn.style.borderRadius = '50%';
+                btn.style.width = '24px';
+                btn.style.height = '24px';
+                btn.style.padding = '0';
+                btn.style.display = 'flex';
+                btn.style.alignItems = 'center';
+                btn.style.justifyContent = 'center';
+                btn.onclick = () => box.remove();
+            }
         }
 
         // Logic: Transfer
@@ -2450,15 +2477,14 @@
         }
 
         function cancelTransfer(id) {
-            const box = document.getElementById(id);
             if (state.sendingFile && state.sendingFile.id === id) {
                 state.sendingFile.isCancelled = true;
-                if (box) box.style.opacity = '0.3';
+                markBoxAsCancelled(id);
                 log('Transmission cancelled by user');
             } else if (state.receivingFile && state.receivingFile.id === id) {
                 state.receivingFile.isCancelled = true;
                 state.receivingFile.chunks = []; // Clear RAM
-                if (box) box.style.opacity = '0.3';
+                markBoxAsCancelled(id);
                 log('Reception cancelled by user');
 
                 // Notify sender that we canceled
