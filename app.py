@@ -112,13 +112,16 @@ def register_peer():
 
         # Generate unique 6-digit pairing code
         pairing_code = generate_pairing_code()
+        
+        # Get real client IP even if behind a proxy
+        client_ip = request.headers.get('X-Forwarded-For', request.remote_addr or '').split(',')[0].strip()
 
         with peers_lock:
             peers[device_id] = {
                 'device_name': data.get('device_name', f'Device-{device_id}'),
                 'pairing_code': pairing_code,
                 'timestamp': datetime.now().isoformat(),
-                'client_ip': request.remote_addr,
+                'client_ip': client_ip,
                 'server_port': data.get('port', 5000)
             }
             pairing_codes[pairing_code] = device_id
@@ -162,11 +165,14 @@ def get_peers():
                     del pairing_codes[code]
                 del peers[device_id]
 
-            # Get all peers except current device
+            # Get real client IP
+            client_ip = request.headers.get('X-Forwarded-For', request.remote_addr or '').split(',')[0].strip()
+
+            # Get all peers on the exact same network (IP match), excluding self
             available_peers = {
                 device_id: info
                 for device_id, info in peers.items()
-                if device_id != current_device
+                if device_id != current_device and info.get('client_ip') == client_ip
             }
 
         logger.debug(f"Available peers for {current_device}: {len(available_peers)}")
