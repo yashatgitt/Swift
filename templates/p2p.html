@@ -1399,9 +1399,13 @@
         <!-- PAIR -->
         <div id="pair" class="tab-content">
             <div class="pairing-container">
-                <div class="qr-card">
-                    <div class="qr-bracket-bottom"></div>
-                    <img id="qrCode" src="/api/qr-code" alt="LINK_PROTOCOL">
+                <div style="display: flex; flex-direction: column; align-items: center; gap: 24px; width: 100%;">
+                    <div class="qr-card">
+                        <div class="qr-bracket-bottom"></div>
+                        <img id="qrCode" src="/api/qr-code" alt="LINK_PROTOCOL">
+                    </div>
+                    <button onclick="copyShareLink(this)" class="btn-pair"
+                        style="background: var(--orange); color: #000; padding: 12px 32px; width: auto;">Copy Link</button>
                 </div>
 
                 <div class="code-card">
@@ -1417,11 +1421,7 @@
                         style="font-family: var(--font-display); font-size: 0.8rem; text-transform: uppercase; margin-bottom: 12px; text-align: center;">
                         Enter remote sequence</p>
                     <input type="text" id="joinCode" placeholder="000000" maxlength="6" inputmode="numeric" pattern="[0-9]*" oninput="this.value = this.value.replace(/[^0-9]/g, '')">
-                    <div style="display: flex; gap: 12px;">
-                        <button onclick="joinByCode(this)" class="btn-pair" style="flex: 2;">Connect Node</button>
-                        <button onclick="copyShareLink(this)" class="btn-pair"
-                            style="flex: 1; background: var(--orange); color: #000;">Copy Link</button>
-                    </div>
+                    <button onclick="joinByCode(this)" class="btn-pair" style="width: 100%;">Connect Node</button>
                 </div>
             </div>
         </div>
