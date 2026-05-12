@@ -3,4 +3,4 @@ qrcode
 Pillow
 gunicorn
 flask-socketio
-eventlet
+gevent>=24.10.1
