@@ -2400,7 +2400,7 @@
                         return;
                     }
 
-                    if (state.dataChannel.bufferedAmount > 1024 * 1024) {
+                    if (state.dataChannel.bufferedAmount > (state.isLanMode ? 2 * 1024 * 1024 : 512 * 1024)) {
                         state.dataChannel.onbufferedamountlow = () => {
                             state.dataChannel.onbufferedamountlow = null;
                             readNext();
