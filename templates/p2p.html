@@ -1555,6 +1555,20 @@
             connectedPeerName: null
         };
 
+        // Utility: Hide Loading Overlay
+        function hideLoadingOverlay() {
+            const overlay = document.getElementById('loadingOverlay');
+            if (overlay && !overlay.classList.contains('hidden')) {
+                overlay.classList.add('hidden');
+                setTimeout(() => {
+                    overlay.style.display = 'none';
+                }, 300);
+            }
+            if (state.loadingTimeout) {
+                clearTimeout(state.loadingTimeout);
+            }
+        }
+
         // Utility: Format Bytes
         function formatBytes(bytes, decimals = 2) {
             if (bytes === 0) return '0 B';
@@ -1908,17 +1922,16 @@
 
             // Hide loading overlay when socket connects
             state.socket.on('connect', () => {
-                const overlay = document.getElementById('loadingOverlay');
-                if (overlay) {
-                    overlay.classList.add('hidden');
-                    setTimeout(() => {
-                        overlay.style.display = 'none';
-                    }, 300);
-                }
-                // Clear the timeout if it was set
-                if (state.loadingTimeout) {
-                    clearTimeout(state.loadingTimeout);
-                }
+                hideLoadingOverlay();
+            });
+
+            // Handle connection errors
+            state.socket.on('connect_error', () => {
+                hideLoadingOverlay();
+            });
+
+            state.socket.on('disconnect', () => {
+                log('[Socket] Disconnected from signaling server');
             });
 
             state.socket.on('peer_joined', (data) => {
@@ -2758,6 +2771,14 @@
             await registerDevice();
             startSignalLoop();
             switchTab('discover');
+
+            // Initialize socket on page load (for signaling)
+            initSocket();
+
+            // Fallback: Hide overlay after 15 seconds even if socket doesn't connect
+            setTimeout(() => {
+                hideLoadingOverlay();
+            }, 15000);
 
             // Drag and Drop
             const dropZone = document.getElementById('uploadArea');
