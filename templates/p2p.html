@@ -1226,10 +1226,62 @@
             transform: translateY(-2px);
             box-shadow: 0 5px 15px rgba(255, 77, 0, 0.4);
         }
+
+        /* Loading Overlay */
+        #loadingOverlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: var(--bg);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            flex-direction: column;
+            gap: 24px;
+            animation: fadeIn 0.3s ease-in;
+        }
+
+        #loadingOverlay.hidden {
+            animation: fadeIn 0.3s ease-out reverse;
+            pointer-events: none;
+            opacity: 0;
+        }
+
+        .loading-spinner {
+            width: 48px;
+            height: 48px;
+            border: 3px solid var(--border-color);
+            border-top-color: var(--orange);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        #loadingText {
+            font-family: var(--font-display);
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--text);
+            letter-spacing: 0.5px;
+        }
     </style>
 </head>
 
 <body>
+    <!-- Loading Overlay -->
+    <div id="loadingOverlay">
+        <div class="loading-spinner"></div>
+        <div id="loadingText">Connecting...</div>
+    </div>
+
     <div id="message">NOTIFICATION_INCOMING</div>
     <div id="animationStage"></div>
 
@@ -1495,6 +1547,7 @@
             socket: null,
             pairingCode: null,
             connectionTimeout: null,
+            loadingTimeout: null,
             processedCandidates: new Set(),
             pendingCandidates: [],
             pendingFiles: [],
@@ -1844,6 +1897,29 @@
         function initSocket() {
             if (state.socket) return;
             state.socket = io({ transports: ['websocket'] });
+
+            // Set 4-second timeout to change loading text if socket hasn't connected
+            state.loadingTimeout = setTimeout(() => {
+                const loadingText = document.getElementById('loadingText');
+                if (loadingText && loadingText.textContent === 'Connecting...') {
+                    loadingText.textContent = 'Waking up server, please wait...';
+                }
+            }, 4000);
+
+            // Hide loading overlay when socket connects
+            state.socket.on('connect', () => {
+                const overlay = document.getElementById('loadingOverlay');
+                if (overlay) {
+                    overlay.classList.add('hidden');
+                    setTimeout(() => {
+                        overlay.style.display = 'none';
+                    }, 300);
+                }
+                // Clear the timeout if it was set
+                if (state.loadingTimeout) {
+                    clearTimeout(state.loadingTimeout);
+                }
+            });
 
             state.socket.on('peer_joined', (data) => {
                 log(`[Socket] Peer ${data.peerId} joined. Initiating...`);
